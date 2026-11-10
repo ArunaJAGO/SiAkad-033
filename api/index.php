@@ -1,25 +1,24 @@
 <?php
 
-// Pastikan direktori temporary storage siap jika berjalan di environment Vercel
-if (isset($_SERVER['VERCEL']) || isset($_ENV['VERCEL']) || getenv('VERCEL')) {
-    $dirs = [
-        '/tmp/storage',
-        '/tmp/storage/app',
-        '/tmp/storage/app/public',
-        '/tmp/storage/framework',
-        '/tmp/storage/framework/cache',
-        '/tmp/storage/framework/cache/data',
-        '/tmp/storage/framework/sessions',
-        '/tmp/storage/framework/views',
-        '/tmp/storage/logs',
-        '/tmp/views',
-    ];
+use Illuminate\Http\Request;
 
-    foreach ($dirs as $dir) {
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
+define('LARAVEL_START', microtime(true));
+
+// Filesystem Vercel read-only, kecuali /tmp
+foreach ([
+    '/tmp/storage/framework/views',
+    '/tmp/storage/framework/cache/data',
+    '/tmp/storage/framework/sessions',
+    '/tmp/storage/logs',
+] as $dir) {
+    if (!is_dir($dir)) {
+        mkdir($dir, 0777, true);
     }
 }
 
-require __DIR__ . '/../public/index.php';
+require __DIR__ . '/../vendor/autoload.php';
+
+$app = require_once __DIR__ . '/../bootstrap/app.php';
+$app->useStoragePath('/tmp/storage');
+
+$app->handleRequest(Request::capture());
